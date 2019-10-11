@@ -29,6 +29,8 @@ export class SwiperDirective implements AfterViewInit, OnDestroy, DoCheck, OnCha
 
   @Input() disabled: boolean = false;
 
+  @Input() performance: boolean = false;
+
   @Input('swiper') config?: SwiperConfigInterface;
 
   @Output() indexChange = new EventEmitter<number>();
@@ -38,12 +40,14 @@ export class SwiperDirective implements AfterViewInit, OnDestroy, DoCheck, OnCha
 
   @Output('scroll'                     ) S_SCROLL                         = new EventEmitter<any>();
   @Output('progress'                   ) S_PROGRESS                       = new EventEmitter<any>();
+  @Output('keyPress'                   ) S_KEYPRESS                       = new EventEmitter<any>();
 
   @Output('resize'                     ) S_RESIZE                         = new EventEmitter<any>();
   @Output('breakpoint'                 ) S_BREAKPOINT                     = new EventEmitter<any>();
+  @Output('zoomChange'                 ) S_ZOOMCHANGE                     = new EventEmitter<any>();
+  @Output('afterResize'                ) S_AFTERRESIZE                    = new EventEmitter<any>();
   @Output('beforeResize'               ) S_BEFORERESIZE                   = new EventEmitter<any>();
 
-  @Output('keyPress'                   ) S_KEYPRESS                       = new EventEmitter<any>();
   @Output('sliderMove'                 ) S_SLIDERMOVE                     = new EventEmitter<any>();
   @Output('slideChange'                ) S_SLIDECHANGE                    = new EventEmitter<any>();
 
@@ -65,6 +69,14 @@ export class SwiperDirective implements AfterViewInit, OnDestroy, DoCheck, OnCha
   @Output('scrollDragEnd'              ) S_SCROLLDRAGEND                  = new EventEmitter<any>();
   @Output('scrollDragMove'             ) S_SCROLLDRAGMOVE                 = new EventEmitter<any>();
   @Output('scrollDragStart'            ) S_SCROLLDRAGSTART                = new EventEmitter<any>();
+
+  @Output('navigationHide'             ) S_NAVIGATIONHIDE                 = new EventEmitter<any>();
+  @Output('navigationShow'             ) S_NAVIGATIONSHOW                 = new EventEmitter<any>();
+
+  @Output('paginationRender'           ) S_PAGINATIONRENDER               = new EventEmitter<any>();
+  @Output('paginationUpdate'           ) S_PAGINATIONUPDATE               = new EventEmitter<any>();
+  @Output('paginationHide'             ) S_PAGINATIONHIDE                 = new EventEmitter<any>();
+  @Output('paginationShow'             ) S_PAGINATIONSHOW                 = new EventEmitter<any>();
 
   @Output('swiperTap'                  ) S_TAP                            = new EventEmitter<any>();
   @Output('swiperClick'                ) S_CLICK                          = new EventEmitter<any>();
@@ -128,11 +140,9 @@ export class SwiperDirective implements AfterViewInit, OnDestroy, DoCheck, OnCha
 
     params.on = {
       slideChange: () => {
-        this.zone.run(() => {
-          if (this.instance) {
-            this.indexChange.emit(this.instance.realIndex);
-          }
-        });
+        if (this.instance && this.indexChange.observers.length) {
+          this.emit(this.indexChange, this.instance.realIndex);
+        }
       }
     };
 
@@ -140,8 +150,8 @@ export class SwiperDirective implements AfterViewInit, OnDestroy, DoCheck, OnCha
       this.instance = new Swiper(this.elementRef.nativeElement, params);
     });
 
-    if (params.init !== false) {
-      this.S_INIT.emit(this.instance);
+    if (params.init !== false && this.S_INIT.observers.length) {
+      this.emit(this.S_INIT, this.instance);
     }
 
     // Add native Swiper event handling
@@ -159,10 +169,8 @@ export class SwiperDirective implements AfterViewInit, OnDestroy, DoCheck, OnCha
 
         const emitter = this[output as keyof SwiperDirective] as EventEmitter<any>;
 
-        if (emitter.observers.length > 0) {
-          this.zone.run(() => {
-            emitter.emit(args);
-          });
+        if (emitter.observers.length) {
+          this.emit(emitter, args);
         }
       });
     });
@@ -217,6 +225,14 @@ export class SwiperDirective implements AfterViewInit, OnDestroy, DoCheck, OnCha
           });
         }
       }
+    }
+  }
+
+  private emit(emitter: EventEmitter<any>, value: any): void {
+    if (this.performance) {
+      emitter.emit(value);
+    } else {
+      this.zone.run(() => emitter.emit(value));
     }
   }
 

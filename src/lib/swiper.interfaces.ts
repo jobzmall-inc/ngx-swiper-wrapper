@@ -3,12 +3,13 @@ import { InjectionToken } from '@angular/core';
 export const SWIPER_CONFIG = new InjectionToken<SwiperConfigInterface>('SWIPER_CONFIG');
 
 export type SwiperEvent = 'init' | 'beforeDestroy' | 'scroll' | 'progress' | 'keyPress' |
-  'beforeResize' | 'afterResize' | 'resize' | 'breakpoint' | 'beforeResize' | 'sliderMove' |
+  'resize' | 'breakpoint' | 'zoomChange' | 'beforeResize' | 'afterResize' | 'sliderMove' |
   'slideChange' | 'setTranslate' | 'setTransition' | 'fromEdge' | 'reachEnd' | 'reachBeginning' |
   'autoplay' | 'autoplayStop' | 'autoplayStart' | 'imagesReady' | 'lazyImageLoad' |
-  'lazyImageReady' | 'scrollDragEnd' | 'scrollDragMove' | 'scrollDragStart' | 'swiperTap' |
-  'swiperClick' | 'swiperDoubleTap' | 'swiperTouchEnd' | 'swiperTouchMove' | 'swiperTouchStart' |
-  'swiperTouchMoveOpposite' | 'swiperTransitionEnd' | 'swiperTransitionStart' |
+  'lazyImageReady' | 'scrollDragEnd' | 'scrollDragMove' | 'scrollDragStart' | 'navigationHide' |
+  'navigationShow' | 'paginationRender' | 'paginationUpdate' | 'paginationHide' | 'paginationShow' |
+  'swiperTap' | 'swiperClick' | 'swiperDoubleTap' | 'swiperTouchEnd' | 'swiperTouchMove' |
+  'swiperTouchStart' | 'swiperTouchMoveOpposite' | 'swiperTransitionEnd' | 'swiperTransitionStart' |
   'slideNextTransitionEnd' | 'slideNextTransitionStart' | 'slidePrevTransitionEnd' |
   'slidePrevTransitionStart' | 'slideChangeTransitionEnd' | 'slideChangeTransitionStart';
 
@@ -20,12 +21,11 @@ export const SwiperEvents: SwiperEvent[] = [
   'progress',
   'keyPress',
 
-  'beforeResize',
-  'afterResize',
-
   'resize',
   'breakpoint',
+  'zoomChange',
   'beforeResize',
+  'afterResize',
 
   'sliderMove',
   'slideChange',
@@ -48,6 +48,14 @@ export const SwiperEvents: SwiperEvent[] = [
   'scrollDragEnd',
   'scrollDragMove',
   'scrollDragStart',
+
+  'navigationHide',
+  'navigationShow',
+
+  'paginationRender',
+  'paginationUpdate',
+  'paginationHide',
+  'paginationShow',
 
   'swiperTap',
   'swiperClick',
@@ -95,6 +103,7 @@ export interface SwiperConfigInterface {
   slidesOffsetBefore?: number,
   slidesOffsetAfter?: number,
   normalizeSlideIndex?: boolean,
+  centerInsufficientSlides?: boolean,
 
   // Grab cursor
   grabCursor?: boolean,
@@ -111,6 +120,8 @@ export interface SwiperConfigInterface {
   followFinger?: boolean,
   allowTouchMove?: boolean,
   threshold?: number,
+  touchStartPreventDefault?: boolean,
+  touchStartForcePreventDefault?: boolean,
   touchMoveStopPropagation?: boolean,
   iOSEdgeSwipeDetection?: boolean,
   iOSEdgeSwipeThreshold?: number,
@@ -161,10 +172,12 @@ export interface SwiperConfigInterface {
 
   // Breakpoints
   breakpoints?: SwiperBreakpointsInterface,
+  breakpointsInverse?: boolean,
 
   // Observer
   observer?: boolean,
   observeParents?: boolean,
+  observeSlideChildren?: boolean,
 
   // Namespace
   containerModifierClass?: string,
@@ -191,6 +204,7 @@ export interface SwiperConfigInterface {
   a11y?: boolean | SwiperA11YInterface,
   lazy?: boolean | SwiperLazyInterface,
   zoom?: boolean | SwiperZoomInterface,
+  thumbs?: boolean | SwiperThumbsInterface,
   history?: boolean | SwiperHistoryInterface,
   virtual?: boolean | SwiperVirtualInterface,
   autoplay?: boolean | SwiperAutoplayInterface,
@@ -230,6 +244,12 @@ export interface SwiperZoomInterface {
   zoomedSlideClass?: string
 }
 
+export interface SwiperThumbsInterface {
+  swiper?: any,
+  slideThumbActiveClass?: string,
+  thumbsContainerClass?: string
+}
+
 export interface SwiperHistoryInterface {
   replaceState?: boolean,
   key?: string
@@ -238,6 +258,8 @@ export interface SwiperHistoryInterface {
 export interface SwiperVirtualInterface {
   slides?: any[],
   cache?: boolean,
+  addSlidesBefore?: number,
+  addSlidesAfter?: number,
   renderSlide?: SwiperRenderSlideFunction,
   renderExternal?: SwiperRenderExternalFunction
 }
@@ -370,6 +392,7 @@ export class SwiperConfig implements SwiperConfigInterface {
   public slidesOffsetBefore?: number;
   public slidesOffsetAfter?: number;
   public normalizeSlideIndex?: boolean;
+  public centerInsufficientSlides?: boolean;
 
   // Grab cursor
   public grabCursor?: boolean;
@@ -386,6 +409,8 @@ export class SwiperConfig implements SwiperConfigInterface {
   public followFinger?: boolean;
   public allowTouchMove?: boolean;
   public threshold?: number;
+  public touchStartPreventDefault?: boolean;
+  public touchStartForcePreventDefault?: boolean;
   public touchMoveStopPropagation?: boolean;
   public iOSEdgeSwipeDetection?: boolean;
   public iOSEdgeSwipeThreshold?: number;
@@ -436,10 +461,12 @@ export class SwiperConfig implements SwiperConfigInterface {
 
   // Breakpoints
   public breakpoints?: any;
+  public breakpointsInverse?: boolean;
 
   // Observer
   public observer?: boolean;
   public observeParents?: boolean;
+  public observeSlideChildren?: boolean;
 
   // Namespace
   public containerModifierClass?: string;
@@ -501,7 +528,7 @@ export class SwiperConfig implements SwiperConfigInterface {
 export type SwiperRenderSlideFunction = (slide: any, index: number) => HTMLElement;
 export type SwiperRenderExternalFunction = (data: any) => void;
 
-export type SwiperRenderCustomFunction = (current: number, total: number) => string;
+export type SwiperRenderCustomFunction = (swiper: any, current: number, total: number) => string;
 
 export type SwiperRenderBulletFunction = (index: number, className: string) => string;
 export type SwiperRenderFractionFunction = (currentClass: string, totalClass: string) => string;

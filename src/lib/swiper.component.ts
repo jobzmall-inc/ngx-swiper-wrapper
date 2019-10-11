@@ -13,7 +13,10 @@ import { SWIPER_CONFIG, SwiperConfig, SwiperConfigInterface,
   selector: 'swiper',
   exportAs: 'ngxSwiper',
   templateUrl: '../../dist/lib/swiper.component.html',
-  styleUrls: [ '../../dist/lib/swiper.component.css' ],
+  styleUrls: [
+    '../../dist/lib/swiper.component.css',
+    '../../node_modules/swiper/dist/css/swiper.min.css'
+  ],
   encapsulation: ViewEncapsulation.None
 })
 export class SwiperComponent implements AfterViewInit, OnDestroy {
@@ -27,15 +30,17 @@ export class SwiperComponent implements AfterViewInit, OnDestroy {
 
   @Input() disabled: boolean = false;
 
+  @Input() performance: boolean = false;
+
   @Input() config?: SwiperConfigInterface;
 
   @Input() useSwiperClass: boolean = true;
 
   @Output() indexChange = new EventEmitter<number>();
 
-  @ViewChild('swiperSlides') swiperSlides?: ElementRef;
+  @ViewChild('swiperSlides', { static: false }) swiperSlides?: ElementRef;
 
-  @ViewChild(SwiperDirective) directiveRef?: SwiperDirective;
+  @ViewChild(SwiperDirective, { static: false }) directiveRef?: SwiperDirective;
 
   get isAtLast(): boolean {
     return (!this.directiveRef || !this.directiveRef.swiper()) ?
@@ -52,12 +57,14 @@ export class SwiperComponent implements AfterViewInit, OnDestroy {
 
   @Output('scroll'                     ) S_SCROLL                         = new EventEmitter<any>();
   @Output('progress'                   ) S_PROGRESS                       = new EventEmitter<any>();
+  @Output('keyPress'                   ) S_KEYPRESS                       = new EventEmitter<any>();
 
   @Output('resize'                     ) S_RESIZE                         = new EventEmitter<any>();
   @Output('breakpoint'                 ) S_BREAKPOINT                     = new EventEmitter<any>();
+  @Output('zoomChange'                 ) S_ZOOMCHANGE                     = new EventEmitter<any>();
+  @Output('afterResize'                ) S_AFTERRESIZE                    = new EventEmitter<any>();
   @Output('beforeResize'               ) S_BEFORERESIZE                   = new EventEmitter<any>();
 
-  @Output('keyPress'                   ) S_KEYPRESS                       = new EventEmitter<any>();
   @Output('sliderMove'                 ) S_SLIDERMOVE                     = new EventEmitter<any>();
   @Output('slideChange'                ) S_SLIDECHANGE                    = new EventEmitter<any>();
 
@@ -79,6 +86,14 @@ export class SwiperComponent implements AfterViewInit, OnDestroy {
   @Output('scrollDragEnd'              ) S_SCROLLDRAGEND                  = new EventEmitter<any>();
   @Output('scrollDragMove'             ) S_SCROLLDRAGMOVE                 = new EventEmitter<any>();
   @Output('scrollDragStart'            ) S_SCROLLDRAGSTART                = new EventEmitter<any>();
+
+  @Output('navigationHide'             ) S_NAVIGATIONHIDE                 = new EventEmitter<any>();
+  @Output('navigationShow'             ) S_NAVIGATIONSHOW                 = new EventEmitter<any>();
+
+  @Output('paginationRender'           ) S_PAGINATIONRENDER               = new EventEmitter<any>();
+  @Output('paginationUpdate'           ) S_PAGINATIONUPDATE               = new EventEmitter<any>();
+  @Output('paginationHide'             ) S_PAGINATIONHIDE                 = new EventEmitter<any>();
+  @Output('paginationShow'             ) S_PAGINATIONSHOW                 = new EventEmitter<any>();
 
   @Output('swiperTap'                  ) S_TAP                            = new EventEmitter<any>();
   @Output('swiperClick'                ) S_CLICK                          = new EventEmitter<any>();
@@ -110,7 +125,7 @@ export class SwiperComponent implements AfterViewInit, OnDestroy {
       this.updateClasses();
 
       if (this.swiperSlides && typeof MutationObserver !== 'undefined') {
-        this.mo = new MutationObserver((mutations) => {
+        this.mo = new MutationObserver(() => {
           this.updateClasses();
         });
 
@@ -153,10 +168,10 @@ export class SwiperComponent implements AfterViewInit, OnDestroy {
 
     this.swiperConfig.assign(this.config); // Custom configuration
 
-    if (this.swiperConfig.pagination === true ||
+    if (this.swiperSlides && (this.swiperConfig.pagination === true ||
        (this.swiperConfig.pagination && typeof this.swiperConfig.pagination === 'object' &&
        (!this.swiperConfig.pagination.type || this.swiperConfig.pagination.type === 'bullets') &&
-       !this.swiperConfig.pagination.renderBullet && this.swiperConfig.pagination.el === '.swiper-pagination'))
+       !this.swiperConfig.pagination.renderBullet && this.swiperConfig.pagination.el === '.swiper-pagination')))
     {
       this.config = this.config || {};
 
@@ -167,7 +182,9 @@ export class SwiperComponent implements AfterViewInit, OnDestroy {
           el: '.swiper-pagination',
 
           renderBullet: (index: number, className: string) => {
-            const children = this.swiperSlides ? this.swiperSlides.nativeElement.children : [];
+            let children = this.swiperSlides ? Array.from(this.swiperSlides.nativeElement.children) : [];
+
+            children = children.filter((child: any) => child.classList.contains('swiper-slide'));
 
             let bullet = `<span class="${className} ${className}-middle" index="${index}"></span>`;
 
@@ -199,7 +216,7 @@ export class SwiperComponent implements AfterViewInit, OnDestroy {
       const children = this.swiperSlides.nativeElement.children;
 
       for (let i = 0; i < children.length; i++) {
-        if (!children[i].classList.contains('swiper-slide')) {
+        if (/swiper-.*/.test(children[i].className) === false) {
           updateNeeded = true;
 
           children[i].classList.add('swiper-slide');
@@ -212,5 +229,15 @@ export class SwiperComponent implements AfterViewInit, OnDestroy {
     }
 
     this.cdRef.detectChanges();
+  }
+
+  public onPaginationClick(index: number): void {
+    if (this.config && this.directiveRef && (this.config.pagination === true ||
+       (this.config.pagination && typeof this.config.pagination === 'object' &&
+       (!this.config.pagination.type || this.config.pagination.type === 'bullets') &&
+       (this.config.pagination.clickable && this.config.pagination.el === '.swiper-pagination'))))
+    {
+      this.directiveRef.setIndex(index);
+    }
   }
 }

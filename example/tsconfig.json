@@ -15,6 +15,9 @@
     "paths": {
       "@angular/*": [
         "./node_modules/@angular/*"
+      ],
+      "swiper": [
+        "./node_modules/swiper/dist/js/swiper.js"
       ]
     },
     "rootDir": ".",

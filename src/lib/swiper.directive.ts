@@ -1,4 +1,5 @@
-import * as Swiper from 'swiper/dist/js/swiper.js';
+import Swiper, { SwiperOptions } from 'swiper';
+
 
 import { PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
@@ -147,7 +148,7 @@ export class SwiperDirective implements AfterViewInit, OnDestroy, DoCheck, OnCha
     };
 
     this.zone.runOutsideAngular(() => {
-      this.instance = new Swiper(this.elementRef.nativeElement, params);
+      this.instance = new Swiper(this.elementRef.nativeElement, (params as SwiperOptions));
     });
 
     if (params.init !== false && this.S_INIT.observers.length) {
